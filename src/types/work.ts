@@ -22,4 +22,5 @@ export interface WorksResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+  allTags?: string[];
 }

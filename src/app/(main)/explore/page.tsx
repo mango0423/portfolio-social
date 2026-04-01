@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
@@ -28,6 +28,7 @@ function ExploreContent() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedWork, setSelectedWork] = useState<Work | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
 
   const currentTag = searchParams.get("tag") || "";
   const currentSort = searchParams.get("sort") || "newest";
@@ -36,17 +37,6 @@ function ExploreContent() {
   const currentUserId = session?.user?.id || "";
   const userName = session?.user?.name || "";
   const userImage = session?.user?.image || "";
-
-  // Extract unique tags from works
-  const allTags = useMemo(() => {
-    const tagSet = new Set<string>();
-    works.forEach((work) => {
-      if (work.tags && Array.isArray(work.tags)) {
-        work.tags.forEach((tag: string) => tagSet.add(tag));
-      }
-    });
-    return Array.from(tagSet).slice(0, 10); // Limit to 10 tags
-  }, [works]);
 
   useEffect(() => {
     async function fetchWorks() {
@@ -68,6 +58,7 @@ function ExploreContent() {
         setWorks(data.works || []);
         setTotal(data.total || 0);
         setTotalPages(data.totalPages || 1);
+        setAllTags(data.allTags || []);
       } catch (error) {
         console.error("Error fetching works:", error);
         setWorks([]);

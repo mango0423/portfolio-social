@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "12", 10);
     const skip = (page - 1) * limit;
     const userId = searchParams.get("userId");
+    const tag = searchParams.get("tag");
 
     // Build where clause
     const where: Record<string, unknown> = {};
@@ -18,6 +19,11 @@ export async function GET(request: Request) {
     // Filter by userId if provided
     if (userId) {
       where.userId = userId;
+    }
+
+    // Filter by tag if provided
+    if (tag) {
+      where.tags = { contains: tag };
     }
 
     // Build orderBy based on sort parameter
@@ -51,6 +57,26 @@ export async function GET(request: Request) {
       prisma.work.count({ where }),
     ]);
 
+    // Get all unique tags for filter UI (only when not filtering by tag)
+    let allTags: string[] = [];
+    if (!tag && !userId) {
+      const allWorks = await prisma.work.findMany({
+        select: { tags: true },
+      });
+      const tagSet = new Set<string>();
+      allWorks.forEach((work) => {
+        try {
+          const tags = JSON.parse(work.tags || "[]");
+          if (Array.isArray(tags)) {
+            tags.forEach((t: string) => tagSet.add(t));
+          }
+        } catch {
+          // ignore parse errors
+        }
+      });
+      allTags = Array.from(tagSet).slice(0, 20);
+    }
+
     const totalPages = Math.ceil(total / limit);
 
     // Get current user's likes if logged in
@@ -64,26 +90,35 @@ export async function GET(request: Request) {
     }
 
     // Transform works to match frontend Work type
-    const transformedWorks = works.map((work) => ({
-      id: work.id,
-      title: work.title,
-      description: work.description || "",
-      imageUrl: work.imageUrl || "",
-      user: {
-        ...work.user,
-        image: work.user.image || "",
-      },
-      likeCount: work._count.likes,
-      commentCount: work._count.comments,
-      tags: [],
-      isLikedByUser: userLikedWorkIds.has(work.id),
-    }));
+    const transformedWorks = works.map((work) => {
+      let tags: string[] = [];
+      try {
+        tags = JSON.parse(work.tags || "[]");
+      } catch {
+        tags = [];
+      }
+      return {
+        id: work.id,
+        title: work.title,
+        description: work.description || "",
+        imageUrl: work.imageUrl || "",
+        user: {
+          ...work.user,
+          image: work.user.image || "",
+        },
+        likeCount: work._count.likes,
+        commentCount: work._count.comments,
+        tags,
+        isLikedByUser: userLikedWorkIds.has(work.id),
+      };
+    });
 
     return NextResponse.json({
       works: transformedWorks,
       total,
       totalPages,
       currentPage: page,
+      allTags,
     });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
@@ -97,7 +132,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { title, description, imageUrl, portfolioId } = await request.json();
+    const { title, description, imageUrl, portfolioId, tags } = await request.json();
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -120,11 +155,15 @@ export async function POST(request: Request) {
       targetPortfolioId = portfolio.id;
     }
 
+    // Store tags as JSON string
+    const tagsJson = JSON.stringify(tags || []);
+
     const work = await prisma.work.create({
       data: {
         title: title.trim(),
         description: description?.trim() || "",
         imageUrl: imageUrl || `https://picsum.photos/800/600?random=${Date.now()}`,
+        tags: tagsJson,
         portfolioId: targetPortfolioId,
         userId: session.user.id,
       },
