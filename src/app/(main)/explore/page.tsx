@@ -64,7 +64,7 @@ function ExploreContent() {
     }
 
     fetchWorks();
-  }, [currentTag, currentSort, currentPage]);
+  }, [currentSort, currentPage]);
 
   const handleSortChange = (sort: string) => {
     const params = new URLSearchParams(searchParams);
