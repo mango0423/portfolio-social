@@ -148,7 +148,7 @@ export default async function UserPage({ params }: UserPageProps) {
             {isOwnProfile ? "我的作品" : "作品集"}
           </h2>
           {user.works.length > 0 ? (
-            <MasonryGrid works={user.works} currentUserId={currentUserId} />
+            <MasonryGrid works={user.works} />
           ) : (
             <div className="text-center py-12 text-gray-500">
               <p>{isOwnProfile ? "还没有作品" : "暂无作品"}</p>
