@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import FollowButton from "@/components/social/FollowButton";
 import MasonryGrid from "@/components/masonry/MasonryGrid";
+import ProfileSettings from "@/components/user/ProfileSettings";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import type { Work } from "@/types/work";
@@ -163,6 +164,16 @@ export default async function UserPage({ params }: UserPageProps) {
             </div>
           </div>
         </div>
+
+        {/* Profile Settings - only for own profile */}
+        {isOwnProfile && (
+          <ProfileSettings
+            userId={user.id}
+            currentName={user.name}
+            currentBio={user.bio}
+            currentImage={user.avatarUrl}
+          />
+        )}
 
         {/* Works Grid */}
         <section>
