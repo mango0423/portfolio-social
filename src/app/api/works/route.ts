@@ -14,14 +14,6 @@ export async function GET(request: Request) {
     // Build where clause
     const where: Record<string, unknown> = {};
 
-    // Tag filtering: parse tags JSON string to array and filter
-    if (tag) {
-      where.tags = {
-        equals: tag,
-        mode: "insensitive",
-      };
-    }
-
     // Build orderBy based on sort parameter
     let orderBy: object[] = [];
     switch (sort) {
@@ -55,8 +47,20 @@ export async function GET(request: Request) {
 
     const totalPages = Math.ceil(total / limit);
 
+    // Transform works to match frontend Work type
+    const transformedWorks = works.map((work) => ({
+      id: work.id,
+      title: work.title,
+      description: work.description || "",
+      imageUrl: work.imageUrl || "",
+      user: work.user,
+      likeCount: work._count.likes,
+      commentCount: work._count.comments,
+      tags: [],
+    }));
+
     return NextResponse.json({
-      works,
+      works: transformedWorks,
       total,
       totalPages,
       currentPage: page,
