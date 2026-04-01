@@ -22,7 +22,6 @@ export default function ProfileSettings({
   const [bio, setBio] = useState(currentBio);
   const [avatar, setAvatar] = useState<string | null>(currentImage);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
