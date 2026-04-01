@@ -3,72 +3,84 @@ import Image from "next/image";
 import Link from "next/link";
 import FollowButton from "@/components/social/FollowButton";
 import MasonryGrid from "@/components/masonry/MasonryGrid";
+import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
+import type { Work } from "@/types/work";
 
 interface UserPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function getUser(id: string) {
-  // TODO: Replace with actual API call
-  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/users/${id}`)
-  // if (!res.ok) throw new Error('Failed to fetch user')
-  // return res.json()
+async function getUserWithWorks(id: string) {
+  const [user, works] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        bio: true,
+        createdAt: true,
+        _count: {
+          select: {
+            followers: true,
+            following: true,
+            works: true,
+          },
+        },
+      },
+    }),
+    prisma.work.findMany({
+      where: { userId: id },
+      include: {
+        user: { select: { id: true, name: true, image: true } },
+        _count: { select: { likes: true, comments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+  ]);
 
-  // Mock data for development
-  if (id === "notfound") {
+  if (!user) {
     return null;
   }
 
+  const transformedWorks: Work[] = works.map((work) => ({
+    id: work.id,
+    title: work.title,
+    description: work.description || "",
+    imageUrl: work.imageUrl || "",
+    user: {
+      ...work.user,
+      image: work.user.image || "",
+    },
+    likeCount: work._count.likes,
+    commentCount: work._count.comments,
+    tags: [],
+  }));
+
   return {
-    id,
-    name: "摄影师小明",
-    avatarUrl: "https://i.pravatar.cc/150?u=u1",
-    bio: "热爱摄影，专注于城市风光和人像摄影。希望用镜头记录生活中的美好瞬间。",
-    followerCount: 1280,
-    followingCount: 256,
-    workCount: 48,
-    works: [
-      {
-        id: "1",
-        title: "暮色之城",
-        description: "城市黄昏时刻的光影捕捉",
-        imageUrl: "https://picsum.photos/800/600?random=1",
-        user: { id, name: "摄影师小明", image: "https://i.pravatar.cc/150?u=u1" },
-        likeCount: 128,
-        commentCount: 24,
-        tags: ["摄影", "城市", "黄昏"],
-      },
-      {
-        id: "7",
-        title: "晨曦微露",
-        description: "清晨的第一缕阳光",
-        imageUrl: "https://picsum.photos/800/1100?random=7",
-        user: { id, name: "摄影师小明", image: "https://i.pravatar.cc/150?u=u1" },
-        likeCount: 256,
-        commentCount: 38,
-        tags: ["摄影", "日出", "自然"],
-      },
-      {
-        id: "8",
-        title: "雨后街道",
-        description: "雨水冲刷后的城市街道",
-        imageUrl: "https://picsum.photos/800/700?random=8",
-        user: { id, name: "摄影师小明", image: "https://i.pravatar.cc/150?u=u1" },
-        likeCount: 512,
-        commentCount: 67,
-        tags: ["摄影", "雨天", "街拍"],
-      },
-    ],
+    id: user.id,
+    name: user.name || "未命名用户",
+    avatarUrl: user.image || "",
+    bio: user.bio || "这个人很懒，什么都没写",
+    followerCount: user._count.followers,
+    followingCount: user._count.following,
+    workCount: user._count.works,
+    works: transformedWorks,
   };
 }
 
 export default async function UserPage({ params }: UserPageProps) {
   const { id } = await params;
-  const user = await getUser(id);
+  const session = await auth();
+  const user = await getUserWithWorks(id);
 
   if (!user) {
     notFound();
   }
+
+  const isOwnProfile = session?.user?.id === id;
+  const currentUserId = session?.user?.id || "";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -76,21 +88,37 @@ export default async function UserPage({ params }: UserPageProps) {
         {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-            <Image
-              src={user.avatarUrl}
-              alt={user.name}
-              width={120}
-              height={120}
-              className="rounded-full"
-            />
+            {user.avatarUrl ? (
+              <Image
+                src={user.avatarUrl}
+                alt={user.name}
+                width={120}
+                height={120}
+                className="rounded-full"
+              />
+            ) : (
+              <div className="w-[120px] h-[120px] bg-gray-200 rounded-full flex items-center justify-center text-4xl text-gray-400">
+                {user.name?.[0] || "?"}
+              </div>
+            )}
 
             <div className="flex-1 text-center sm:text-left">
               <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900">{user.name}</h1>
-                  <p className="text-gray-500 mt-1">@{user.id}</p>
+                  <p className="text-gray-500 mt-1">@{user.id.slice(0, 8)}</p>
                 </div>
-                <FollowButton userId="current-user" targetUserId={user.id} />
+                {!isOwnProfile && (
+                  <FollowButton userId={currentUserId} targetUserId={user.id} />
+                )}
+                {isOwnProfile && (
+                  <Link
+                    href="/create"
+                    className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#45a049] transition-colors"
+                  >
+                    发布作品
+                  </Link>
+                )}
               </div>
 
               <p className="text-gray-700 mt-4 max-w-2xl">{user.bio}</p>
@@ -115,15 +143,19 @@ export default async function UserPage({ params }: UserPageProps) {
 
         {/* Works Grid */}
         <section>
-          <h2 className="text-xl font-bold text-gray-900 mb-4">作品集</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-4">
+            {isOwnProfile ? "我的作品" : "作品集"}
+          </h2>
           {user.works.length > 0 ? (
-            <MasonryGrid works={user.works} />
+            <MasonryGrid works={user.works} currentUserId={currentUserId} />
           ) : (
             <div className="text-center py-12 text-gray-500">
-              <p>还没有作品</p>
-              <Link href="/create" className="text-blue-600 hover:underline mt-2 inline-block">
-                立即上传
-              </Link>
+              <p>{isOwnProfile ? "还没有作品" : "暂无作品"}</p>
+              {isOwnProfile && (
+                <Link href="/create" className="text-[#4CAF50] hover:underline mt-2 inline-block">
+                  立即上传
+                </Link>
+              )}
             </div>
           )}
         </section>

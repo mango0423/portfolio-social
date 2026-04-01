@@ -9,9 +9,15 @@ export async function GET(request: Request) {
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "12", 10);
     const skip = (page - 1) * limit;
+    const userId = searchParams.get("userId");
 
     // Build where clause
     const where: Record<string, unknown> = {};
+
+    // Filter by userId if provided
+    if (userId) {
+      where.userId = userId;
+    }
 
     // Build orderBy based on sort parameter
     let orderBy: object[] = [];
