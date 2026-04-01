@@ -35,9 +35,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return {
           id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
         };
       },
     }),
@@ -48,8 +45,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub;
+      if (session.user) {
+        session.user.id = token.sub as string;
       }
       return session;
     },
