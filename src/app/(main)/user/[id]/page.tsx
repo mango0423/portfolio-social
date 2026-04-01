@@ -50,7 +50,8 @@ async function getUserWithWorks(id: string) {
     description: work.description || "",
     imageUrl: work.imageUrl || "",
     user: {
-      ...work.user,
+      id: work.user.id,
+      name: work.user.name || "未命名用户",
       image: work.user.image || "",
     },
     likeCount: work._count.likes,
