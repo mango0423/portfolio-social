@@ -22,7 +22,7 @@ export default function WorkCard({ work, isLoaded, onImageLoad, onClick }: WorkC
       className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
       onClick={onClick}
     >
-      <div className="relative aspect-[4/3]">
+      <div className="relative aspect-auto">
         {!isLoaded && (
           <div className="absolute inset-0 bg-gray-200 animate-pulse" />
         )}
@@ -32,11 +32,11 @@ export default function WorkCard({ work, isLoaded, onImageLoad, onClick }: WorkC
             alt={work.title}
             width={800}
             height={600}
-            className={`w-full h-full object-cover transition-opacity ${isLoaded ? "opacity-100" : "opacity-0"}`}
+            className={`w-full h-auto object-cover transition-opacity ${isLoaded ? "opacity-100" : "opacity-0"}`}
             onLoad={() => onImageLoad()}
           />
         ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400">
+          <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400">
             暂无图片
           </div>
         )}

@@ -113,9 +113,9 @@ export default function WorkDetailModal({ work, onClose, onLikeChange }: WorkDet
               <Image
                 src={work.imageUrl}
                 alt={work.title}
-                width={800}
-                height={600}
-                className="max-w-full max-h-[50vh] md:max-h-full object-contain rounded-lg"
+                width={1200}
+                height={900}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg"
               />
             ) : (
               <div className="text-gray-400">暂无图片</div>
