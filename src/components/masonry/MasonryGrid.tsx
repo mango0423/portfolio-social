@@ -2,27 +2,14 @@
 
 import { useState } from "react";
 import WorkCard from "./WorkCard";
-
-interface Work {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  user: {
-    id: string;
-    name: string;
-    avatarUrl: string;
-  };
-  likeCount: number;
-  commentCount: number;
-  tags: string[];
-}
+import type { Work } from "@/types/work";
 
 interface MasonryGridProps {
   works: Work[];
+  currentUserId?: string;
 }
 
-export default function MasonryGrid({ works }: MasonryGridProps) {
+export default function MasonryGrid({ works, currentUserId }: MasonryGridProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   const handleImageLoad = (workId: string) => {
@@ -47,6 +34,7 @@ export default function MasonryGrid({ works }: MasonryGridProps) {
               work={work}
               isLoaded={loadedImages.has(work.id)}
               onImageLoad={() => handleImageLoad(work.id)}
+              currentUserId={currentUserId}
             />
           ))}
         </div>

@@ -3,30 +3,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import LikeButton from "@/components/social/LikeButton";
+import FollowButton from "@/components/social/FollowButton";
 import { useSession } from "next-auth/react";
-
-interface Work {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  user: {
-    id: string;
-    name: string;
-    avatarUrl: string;
-  };
-  likeCount: number;
-  commentCount: number;
-  tags: string[];
-}
+import type { Work } from "@/types/work";
 
 interface WorkCardProps {
   work: Work;
   isLoaded: boolean;
   onImageLoad: () => void;
+  currentUserId?: string;
 }
 
-export default function WorkCard({ work, isLoaded, onImageLoad }: WorkCardProps) {
+export default function WorkCard({ work, isLoaded, onImageLoad, currentUserId }: WorkCardProps) {
   const { data: session } = useSession() ?? { data: null };
   const userId = session?.user?.id || "";
 
@@ -58,7 +46,7 @@ export default function WorkCard({ work, isLoaded, onImageLoad }: WorkCardProps)
         <p className="text-sm text-gray-500 mt-1 line-clamp-2">{work.description}</p>
 
         <div className="flex flex-wrap gap-1 mt-2">
-          {work.tags.map((tag) => (
+          {work.tags && Array.isArray(work.tags) && work.tags.map((tag) => (
             <span
               key={tag}
               className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
@@ -71,13 +59,14 @@ export default function WorkCard({ work, isLoaded, onImageLoad }: WorkCardProps)
         <div className="flex items-center justify-between mt-4">
           <Link href={`/user/${work.user.id}`} className="flex items-center gap-2">
             <Image
-              src={work.user.avatarUrl}
+              src={work.user.image}
               alt={work.user.name}
               width={24}
               height={24}
               className="rounded-full"
             />
             <span className="text-sm text-gray-600 hover:text-blue-600">{work.user.name}</span>
+            <FollowButton userId={currentUserId} targetUserId={work.user.id} />
           </Link>
 
           <div className="flex items-center gap-3">

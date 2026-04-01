@@ -6,29 +6,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import MasonryGrid from "@/components/masonry/MasonryGrid";
-
-interface Work {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  user: {
-    id: string;
-    name: string;
-    image: string;
-  };
-  likeCount: number;
-  commentCount: number;
-  tags: string[];
-}
-
-interface WorksResponse {
-  works: Work[];
-  total: number;
-  page: number;
-  pageSize: number;
-  totalPages: number;
-}
+import type { Work, WorksResponse } from "@/types/work";
 
 const SORT_OPTIONS = [
   { value: "newest", label: "最新" },

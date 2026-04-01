@@ -2,16 +2,65 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const works = await prisma.work.findMany({
-      include: {
-        user: { select: { id: true, name: true, image: true } },
-        _count: { select: { likes: true, comments: true } },
-      },
-      orderBy: { createdAt: "desc" },
+    const { searchParams } = new URL(request.url);
+    const tag = searchParams.get("tag");
+    const sort = searchParams.get("sort") || "newest";
+    const page = parseInt(searchParams.get("page") || "1", 10);
+    const limit = parseInt(searchParams.get("limit") || "12", 10);
+    const skip = (page - 1) * limit;
+
+    // Build where clause
+    const where: Record<string, unknown> = {};
+
+    // Tag filtering: parse tags JSON string to array and filter
+    if (tag) {
+      where.tags = {
+        equals: tag,
+        mode: "insensitive",
+      };
+    }
+
+    // Build orderBy based on sort parameter
+    let orderBy: object[] = [];
+    switch (sort) {
+      case "most_liked":
+        orderBy = [{ likes: { _count: "desc" } }, { createdAt: "desc" }];
+        break;
+      case "most_commented":
+        orderBy = [{ comments: { _count: "desc" } }, { createdAt: "desc" }];
+        break;
+      case "random":
+        orderBy = [{ id: "desc" }]; // Fallback, Prisma doesn't have random
+        break;
+      case "newest":
+      default:
+        orderBy = [{ createdAt: "desc" }];
+    }
+
+    const [works, total] = await Promise.all([
+      prisma.work.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, image: true } },
+          _count: { select: { likes: true, comments: true } },
+        },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      prisma.work.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+
+    return NextResponse.json({
+      works,
+      total,
+      totalPages,
+      currentPage: page,
     });
-    return NextResponse.json(works);
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
@@ -24,7 +73,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { title, description, portfolioId } = await request.json();
+    const { title, description, imageUrl, portfolioId } = await request.json();
 
     if (!title?.trim()) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 });
@@ -51,6 +100,7 @@ export async function POST(request: Request) {
       data: {
         title: title.trim(),
         description: description?.trim() || "",
+        imageUrl: imageUrl || `https://picsum.photos/800/600?random=${Date.now()}`,
         portfolioId: targetPortfolioId,
         userId: session.user.id,
       },

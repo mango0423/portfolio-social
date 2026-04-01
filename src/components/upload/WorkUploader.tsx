@@ -45,24 +45,21 @@ export default function WorkUploader() {
     setUploading(true);
 
     try {
-      // Create form data for file upload
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("tags", tags);
-      formData.append("file", file);
+      const res = await fetch("/api/works", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+        }),
+      });
 
-      // TODO: Replace with actual API call
-      // const res = await fetch('/api/works', {
-      //   method: 'POST',
-      //   body: formData,
-      // })
-      // if (!res.ok) throw new Error('Upload failed')
-      // const work = await res.json()
-      // router.push(`/works/${work.id}`)
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Upload failed");
+      }
 
-      // Mock success for development
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      await res.json();
       alert("作品上传成功！");
       router.push("/explore");
     } catch (error) {

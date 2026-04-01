@@ -1,7 +1,7 @@
 import { authEdge } from "@/auth-edge";
 import { NextResponse } from "next/server";
 
-const publicPaths = ["/login", "/register", "/api/auth", "/", "/explore"];
+const publicPaths = ["/login", "/register", "/api/auth", "/", "/explore", "/create"];
 
 export default authEdge((req) => {
   const isLoggedIn = !!req.auth;
