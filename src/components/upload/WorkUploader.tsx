@@ -45,12 +45,36 @@ export default function WorkUploader() {
     setUploading(true);
 
     try {
+      // Convert file to base64
+      const reader = new FileReader();
+      const imageBase64 = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Upload image first
+      const uploadRes = await fetch("/api/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image: imageBase64 }),
+      });
+
+      if (!uploadRes.ok) {
+        throw new Error("Image upload failed");
+      }
+
+      const { url: imageUrl } = await uploadRes.json();
+
+      // Create work with image URL
       const res = await fetch("/api/works", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           description: description.trim(),
+          imageUrl,
+          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         }),
       });
 
@@ -59,7 +83,6 @@ export default function WorkUploader() {
         throw new Error(error.error || "Upload failed");
       }
 
-      await res.json();
       alert("作品上传成功！");
       router.push("/explore");
     } catch (error) {
