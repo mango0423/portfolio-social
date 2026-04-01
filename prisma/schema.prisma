@@ -52,7 +52,6 @@ model Work {
   description String?
   imageUrl    String?
   projectUrl  String?
-  tags        String   @default("[]")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

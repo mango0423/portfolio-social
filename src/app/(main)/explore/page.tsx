@@ -28,9 +28,7 @@ function ExploreContent() {
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
   const [selectedWork, setSelectedWork] = useState<Work | null>(null);
-  const [allTags, setAllTags] = useState<string[]>([]);
 
-  const currentTag = searchParams.get("tag") || "";
   const currentSort = searchParams.get("sort") || "newest";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
 
@@ -43,7 +41,6 @@ function ExploreContent() {
       setLoading(true);
       try {
         const params = new URLSearchParams();
-        if (currentTag) params.set("tag", currentTag);
         params.set("sort", currentSort);
         params.set("page", currentPage.toString());
         params.set("pageSize", PAGE_SIZE.toString());
@@ -58,7 +55,6 @@ function ExploreContent() {
         setWorks(data.works || []);
         setTotal(data.total || 0);
         setTotalPages(data.totalPages || 1);
-        setAllTags(data.allTags || []);
       } catch (error) {
         console.error("Error fetching works:", error);
         setWorks([]);
@@ -69,17 +65,6 @@ function ExploreContent() {
 
     fetchWorks();
   }, [currentTag, currentSort, currentPage]);
-
-  const handleTagClick = (tag: string) => {
-    const params = new URLSearchParams(searchParams);
-    if (tag) {
-      params.set("tag", tag);
-    } else {
-      params.delete("tag");
-    }
-    params.set("page", "1");
-    router.push(`/explore?${params.toString()}`);
-  };
 
   const handleSortChange = (sort: string) => {
     const params = new URLSearchParams(searchParams);
@@ -166,35 +151,6 @@ function ExploreContent() {
             </Link>
           )}
         </header>
-
-        {/* QuickFilters */}
-        {allTags.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-2">
-            <button
-              onClick={() => handleTagClick("")}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                !currentTag
-                  ? "bg-[#4CAF50] text-white"
-                  : "bg-white text-gray-700 border border-gray-200 hover:border-[#4CAF50] hover:text-[#4CAF50]"
-              }`}
-            >
-              全部
-            </button>
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                onClick={() => handleTagClick(tag)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                  currentTag === tag
-                    ? "bg-[#4CAF50] text-white"
-                    : "bg-white text-gray-700 border border-gray-200 hover:border-[#4CAF50] hover:text-[#4CAF50]"
-                }`}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        )}
 
         {/* Sort Dropdown */}
         <div className="mb-6 flex items-center justify-between">

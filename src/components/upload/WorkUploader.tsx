@@ -80,7 +80,6 @@ export default function WorkUploader() {
           title: title.trim(),
           description: description.trim(),
           imageUrl,
-          tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
         }),
       });
 
