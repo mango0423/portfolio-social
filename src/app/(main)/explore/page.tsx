@@ -238,7 +238,7 @@ function ExploreContent() {
             <p className="text-gray-500">暂无作品</p>
           </div>
         ) : (
-          <MasonryGrid works={works} currentUserId={currentUserId} onWorkClick={handleWorkClick} />
+          <MasonryGrid works={works} onWorkClick={handleWorkClick} />
         )}
 
         {/* Pagination */}

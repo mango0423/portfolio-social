@@ -35,22 +35,21 @@ export default function WorkDetailModal({ work, onClose, onLikeChange }: WorkDet
   const currentUserId = session?.user?.id || "";
 
   useEffect(() => {
+    async function fetchComments() {
+      try {
+        const res = await fetch(`/api/works/${work.id}/comments`);
+        if (res.ok) {
+          const data = await res.json();
+          setComments(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch comments:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
     fetchComments();
   }, [work.id]);
-
-  async function fetchComments() {
-    try {
-      const res = await fetch(`/api/works/${work.id}/comments`);
-      if (res.ok) {
-        const data = await res.json();
-        setComments(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch comments:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   async function handleSubmitComment(e: React.FormEvent) {
     e.preventDefault();

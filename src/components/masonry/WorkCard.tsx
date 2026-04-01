@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import LikeButton from "@/components/social/LikeButton";
-import FollowButton from "@/components/social/FollowButton";
 import { useSession } from "next-auth/react";
 import type { Work } from "@/types/work";
 
@@ -11,11 +10,10 @@ interface WorkCardProps {
   work: Work;
   isLoaded: boolean;
   onImageLoad: () => void;
-  currentUserId?: string;
   onClick?: () => void;
 }
 
-export default function WorkCard({ work, isLoaded, onImageLoad, currentUserId, onClick }: WorkCardProps) {
+export default function WorkCard({ work, isLoaded, onImageLoad, onClick }: WorkCardProps) {
   const { data: session } = useSession() ?? { data: null };
   const userId = session?.user?.id || "";
 
