@@ -89,7 +89,7 @@ export default function WorkCard({ work, isLoaded, onImageLoad, onClick }: WorkC
             <LikeButton
               workId={work.id}
               userId={userId}
-              initialLiked={false}
+              initialLiked={work.isLikedByUser || false}
               initialCount={work.likeCount}
             />
           </div>

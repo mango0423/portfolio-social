@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 
 export async function GET(request: Request) {
   try {
+    const session = await auth();
     const { searchParams } = new URL(request.url);
     const sort = searchParams.get("sort") || "newest";
     const page = parseInt(searchParams.get("page") || "1", 10);
@@ -52,6 +53,16 @@ export async function GET(request: Request) {
 
     const totalPages = Math.ceil(total / limit);
 
+    // Get current user's likes if logged in
+    let userLikedWorkIds: Set<string> = new Set();
+    if (session?.user?.id) {
+      const userLikes = await prisma.like.findMany({
+        where: { userId: session.user.id },
+        select: { workId: true },
+      });
+      userLikedWorkIds = new Set(userLikes.map((like) => like.workId));
+    }
+
     // Transform works to match frontend Work type
     const transformedWorks = works.map((work) => ({
       id: work.id,
@@ -65,6 +76,7 @@ export async function GET(request: Request) {
       likeCount: work._count.likes,
       commentCount: work._count.comments,
       tags: [],
+      isLikedByUser: userLikedWorkIds.has(work.id),
     }));
 
     return NextResponse.json({

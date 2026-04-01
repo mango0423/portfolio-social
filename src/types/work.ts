@@ -13,6 +13,7 @@ export interface Work {
   likeCount: number;
   commentCount: number;
   tags: string[];
+  isLikedByUser?: boolean;
 }
 
 export interface WorksResponse {

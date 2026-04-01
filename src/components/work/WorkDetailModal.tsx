@@ -175,7 +175,7 @@ export default function WorkDetailModal({ work, onClose, onLikeChange }: WorkDet
               <LikeButton
                 workId={work.id}
                 userId={currentUserId}
-                initialLiked={false}
+                initialLiked={work.isLikedByUser || false}
                 initialCount={likeCount}
                 onLikeChange={handleLikeChange}
               />

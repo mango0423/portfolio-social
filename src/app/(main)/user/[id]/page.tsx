@@ -11,7 +11,7 @@ interface UserPageProps {
   params: Promise<{ id: string }>;
 }
 
-async function getUserWithWorks(id: string) {
+async function getUserWithWorks(id: string, currentUserId?: string) {
   const [user, works] = await Promise.all([
     prisma.user.findUnique({
       where: { id },
@@ -44,6 +44,16 @@ async function getUserWithWorks(id: string) {
     return null;
   }
 
+  // Get current user's likes if logged in
+  let userLikedWorkIds: Set<string> = new Set();
+  if (currentUserId) {
+    const userLikes = await prisma.like.findMany({
+      where: { userId: currentUserId },
+      select: { workId: true },
+    });
+    userLikedWorkIds = new Set(userLikes.map((like) => like.workId));
+  }
+
   const transformedWorks: Work[] = works.map((work) => ({
     id: work.id,
     title: work.title,
@@ -57,6 +67,7 @@ async function getUserWithWorks(id: string) {
     likeCount: work._count.likes,
     commentCount: work._count.comments,
     tags: [],
+    isLikedByUser: userLikedWorkIds.has(work.id),
   }));
 
   return {
@@ -74,7 +85,8 @@ async function getUserWithWorks(id: string) {
 export default async function UserPage({ params }: UserPageProps) {
   const { id } = await params;
   const session = await auth();
-  const user = await getUserWithWorks(id);
+  const currentUserId = session?.user?.id;
+  const user = await getUserWithWorks(id, currentUserId);
 
   if (!user) {
     notFound();
