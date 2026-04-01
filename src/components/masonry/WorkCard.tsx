@@ -1,0 +1,98 @@
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import LikeButton from "@/components/social/LikeButton";
+import { useSession } from "next-auth/react";
+
+interface Work {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  user: {
+    id: string;
+    name: string;
+    avatarUrl: string;
+  };
+  likeCount: number;
+  commentCount: number;
+  tags: string[];
+}
+
+interface WorkCardProps {
+  work: Work;
+  isLoaded: boolean;
+  onImageLoad: () => void;
+}
+
+export default function WorkCard({ work, isLoaded, onImageLoad }: WorkCardProps) {
+  const { data: session } = useSession() ?? { data: null };
+  const userId = session?.user?.id || "";
+
+  return (
+    <div className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <Link href={`/works/${work.id}`}>
+        <div className="relative aspect-auto">
+          {!isLoaded && (
+            <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+          )}
+          <Image
+            src={work.imageUrl}
+            alt={work.title}
+            width={800}
+            height={600}
+            className={`w-full h-auto object-cover transition-opacity ${isLoaded ? "opacity-100" : "opacity-0"}`}
+            onLoad={() => onImageLoad()}
+          />
+        </div>
+      </Link>
+
+      <div className="p-4">
+        <Link href={`/works/${work.id}`}>
+          <h3 className="font-semibold text-gray-900 hover:text-blue-600 transition-colors">
+            {work.title}
+          </h3>
+        </Link>
+
+        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{work.description}</p>
+
+        <div className="flex flex-wrap gap-1 mt-2">
+          {work.tags.map((tag) => (
+            <span
+              key={tag}
+              className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between mt-4">
+          <Link href={`/user/${work.user.id}`} className="flex items-center gap-2">
+            <Image
+              src={work.user.avatarUrl}
+              alt={work.user.name}
+              width={24}
+              height={24}
+              className="rounded-full"
+            />
+            <span className="text-sm text-gray-600 hover:text-blue-600">{work.user.name}</span>
+          </Link>
+
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-400">
+              💬 {work.commentCount}
+            </span>
+            <LikeButton
+              workId={work.id}
+              userId={userId}
+              initialLiked={false}
+              initialCount={work.likeCount}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
