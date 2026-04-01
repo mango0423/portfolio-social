@@ -1,89 +1,297 @@
+"use client";
+
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import Link from "next/link";
 import MasonryGrid from "@/components/masonry/MasonryGrid";
 
-async function getWorks() {
-  // TODO: Replace with actual API call
-  // const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/works`, { cache: 'no-store' })
-  // if (!res.ok) throw new Error('Failed to fetch works')
-  // return res.json()
-
-  // Mock data for development
-  return [
-    {
-      id: "1",
-      title: "暮色之城",
-      description: "城市黄昏时刻的光影捕捉",
-      imageUrl: "https://picsum.photos/800/600?random=1",
-      user: { id: "u1", name: "摄影师小明", avatarUrl: "https://ui-avatars.com/api/?name=摄影师小明&size=150" },
-      likeCount: 128,
-      commentCount: 24,
-      tags: ["摄影", "城市", "黄昏"],
-    },
-    {
-      id: "2",
-      title: "极简主义",
-      description: "简单线条构成的视觉语言",
-      imageUrl: "https://picsum.photos/800/1200?random=2",
-      user: { id: "u2", name: "设计师小花", avatarUrl: "https://ui-avatars.com/api/?name=设计师小花&size=150" },
-      likeCount: 256,
-      commentCount: 42,
-      tags: ["设计", "极简", "几何"],
-    },
-    {
-      id: "3",
-      title: "山川之间",
-      description: "徒步旅行的所见所感",
-      imageUrl: "https://picsum.photos/800/800?random=3",
-      user: { id: "u3", name: "旅行家大山", avatarUrl: "https://ui-avatars.com/api/?name=旅行家大山&size=150" },
-      likeCount: 512,
-      commentCount: 89,
-      tags: ["旅行", "自然", "山脉"],
-    },
-    {
-      id: "4",
-      title: "数字梦境",
-      description: "AI生成的艺术作品",
-      imageUrl: "https://picsum.photos/800/1000?random=4",
-      user: { id: "u4", name: "数字艺术家梦", avatarUrl: "https://ui-avatars.com/api/?name=数字艺术家梦&size=150" },
-      likeCount: 1024,
-      commentCount: 156,
-      tags: ["AI", "数字艺术", "梦幻"],
-    },
-    {
-      id: "5",
-      title: "咖啡时光",
-      description: "手冲咖啡的精致瞬间",
-      imageUrl: "https://picsum.photos/800/700?random=5",
-      user: { id: "u5", name: "咖啡师小林", avatarUrl: "https://ui-avatars.com/api/?name=咖啡师小林&size=150" },
-      likeCount: 64,
-      commentCount: 12,
-      tags: ["咖啡", "生活", "静物"],
-    },
-    {
-      id: "6",
-      title: "街头故事",
-      description: "城市街头的黑白瞬间",
-      imageUrl: "https://picsum.photos/800/900?random=6",
-      user: { id: "u6", name: "街拍摄影师", avatarUrl: "https://ui-avatars.com/api/?name=街拍摄影师&size=150" },
-      likeCount: 320,
-      commentCount: 45,
-      tags: ["街拍", "黑白", "纪实"],
-    },
-  ];
+interface Work {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  user: {
+    id: string;
+    name: string;
+    image: string;
+  };
+  likeCount: number;
+  commentCount: number;
+  tags: string[];
 }
 
-export default async function ExplorePage() {
-  const works = await getWorks();
+interface WorksResponse {
+  works: Work[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+const SORT_OPTIONS = [
+  { value: "newest", label: "最新" },
+  { value: "most_liked", label: "最多点赞" },
+  { value: "most_commented", label: "最多评论" },
+  { value: "random", label: "随机" },
+];
+
+const PAGE_SIZE = 12;
+
+function ExploreContent() {
+  const router = useRouter();
+  const { data: session } = useSession();
+  const searchParams = useSearchParams();
+
+  const [works, setWorks] = useState<Work[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const currentTag = searchParams.get("tag") || "";
+  const currentSort = searchParams.get("sort") || "newest";
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+
+  const currentUserId = session?.user?.id || "";
+  const userName = session?.user?.name || "";
+  const userImage = session?.user?.image || "";
+
+  // Extract unique tags from works
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    works.forEach((work) => {
+      if (work.tags && Array.isArray(work.tags)) {
+        work.tags.forEach((tag: string) => tagSet.add(tag));
+      }
+    });
+    return Array.from(tagSet).slice(0, 10); // Limit to 10 tags
+  }, [works]);
+
+  useEffect(() => {
+    async function fetchWorks() {
+      setLoading(true);
+      try {
+        const params = new URLSearchParams();
+        if (currentTag) params.set("tag", currentTag);
+        params.set("sort", currentSort);
+        params.set("page", currentPage.toString());
+        params.set("pageSize", PAGE_SIZE.toString());
+
+        const res = await fetch(`/api/works?${params.toString()}`, {
+          cache: "no-store",
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch works");
+
+        const data: WorksResponse = await res.json();
+        setWorks(data.works || []);
+        setTotal(data.total || 0);
+        setTotalPages(data.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching works:", error);
+        setWorks([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchWorks();
+  }, [currentTag, currentSort, currentPage]);
+
+  const handleTagClick = (tag: string) => {
+    const params = new URLSearchParams(searchParams);
+    if (tag) {
+      params.set("tag", tag);
+    } else {
+      params.delete("tag");
+    }
+    params.set("page", "1");
+    router.push(`/explore?${params.toString()}`);
+  };
+
+  const handleSortChange = (sort: string) => {
+    const params = new URLSearchParams(searchParams);
+    params.set("sort", sort);
+    params.set("page", "1");
+    router.push(`/explore?${params.toString()}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages) return;
+    const params = new URLSearchParams(searchParams);
+    params.set("page", newPage.toString());
+    router.push(`/explore?${params.toString()}`);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">发现</h1>
-          <p className="text-gray-600 mt-2">探索来自全球创作者的作品</p>
+        <header className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">发现</h1>
+            <p className="text-gray-600 mt-2">探索来自全球创作者的作品</p>
+          </div>
+          {session ? (
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/user/${currentUserId}`}
+                className="px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:border-[#4CAF50] hover:text-[#4CAF50] transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>我的</span>
+              </Link>
+              <Link
+                href="/create"
+                className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#45a049] transition-colors flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>发布作品</span>
+              </Link>
+              {userImage && userImage !== "" ? (
+                <Link href={`/user/${currentUserId}`}>
+                  <Image
+                    src={userImage}
+                    alt={userName}
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                </Link>
+              ) : (
+                <Link href={`/user/${currentUserId}`}>
+                  <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                    <span className="text-gray-500">{userName?.[0] || "U"}</span>
+                  </div>
+                </Link>
+              )}
+            </div>
+          ) : (
+            <Link
+              href="/login"
+              className="px-4 py-2 bg-[#4CAF50] text-white rounded-lg hover:bg-[#45a049] transition-colors"
+            >
+              登录
+            </Link>
+          )}
         </header>
 
-        <MasonryGrid works={works} />
+        {/* QuickFilters */}
+        {allTags.length > 0 && (
+          <div className="mb-6 flex flex-wrap gap-2">
+            <button
+              onClick={() => handleTagClick("")}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                !currentTag
+                  ? "bg-[#4CAF50] text-white"
+                  : "bg-white text-gray-700 border border-gray-200 hover:border-[#4CAF50] hover:text-[#4CAF50]"
+              }`}
+            >
+              全部
+            </button>
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => handleTagClick(tag)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  currentTag === tag
+                    ? "bg-[#4CAF50] text-white"
+                    : "bg-white text-gray-700 border border-gray-200 hover:border-[#4CAF50] hover:text-[#4CAF50]"
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sort Dropdown */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">排序：</span>
+            <select
+              value={currentSort}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#4CAF50] focus:border-transparent"
+            >
+              {SORT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          {total > 0 && (
+            <span className="text-sm text-gray-500">
+              共 {total} 个作品
+            </span>
+          )}
+        </div>
+
+        {/* Content */}
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="text-gray-500">加载中...</div>
+          </div>
+        ) : works.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <p className="text-gray-500">暂无作品</p>
+          </div>
+        ) : (
+          <MasonryGrid works={works} currentUserId={currentUserId} />
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="mt-8 flex items-center justify-center gap-4">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage <= 1}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                currentPage <= 1
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-[#4CAF50] text-white hover:bg-[#45a049]"
+              }`}
+            >
+              上一页
+            </button>
+            <span className="text-sm text-gray-600">
+              第 {currentPage} / {totalPages} 页
+            </span>
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage >= totalPages}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                currentPage >= totalPages
+                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                  : "bg-[#4CAF50] text-white hover:bg-[#45a049]"
+              }`}
+            >
+              下一页
+            </button>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="flex justify-center items-center py-20">
+      <div className="text-gray-500">加载中...</div>
+    </div>
+  );
+}
+
+export default function ExplorePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ExploreContent />
+    </Suspense>
   );
 }
