@@ -5,7 +5,6 @@ import { auth } from "@/auth";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const tag = searchParams.get("tag");
     const sort = searchParams.get("sort") || "newest";
     const page = parseInt(searchParams.get("page") || "1", 10);
     const limit = parseInt(searchParams.get("limit") || "12", 10);
