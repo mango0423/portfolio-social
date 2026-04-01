@@ -1,25 +1,27 @@
-import { auth } from "@/auth";
-import { NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import type { NextAuthConfig } from "next-auth";
 
-const publicPaths = ["/login", "/register", "/api/auth", "/", "/explore"];
-
-export default auth((req) => {
-  const isLoggedIn = !!req.auth;
-  const pathname = req.nextUrl.pathname;
-
-  const isPublicPath = publicPaths.some(
-    (path) => pathname === path || pathname.startsWith(path + "/")
-  );
-
-  if (!isPublicPath && !isLoggedIn) {
-    const loginUrl = new URL("/login", req.nextUrl.origin);
-    loginUrl.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  return NextResponse.next();
-});
-
-export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public|api/works).*)"],
+export const authOptions: NextAuthConfig = {
+  providers: [],
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+  callbacks: {
+    async session({ session, token }) {
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
+      }
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token.sub = user.id;
+      }
+      return token;
+    },
+  },
+  session: { strategy: "jwt" },
 };
+
+export const { auth: authEdge } = NextAuth(authOptions);
