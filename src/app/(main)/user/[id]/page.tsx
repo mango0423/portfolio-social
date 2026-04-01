@@ -97,6 +97,17 @@ export default async function UserPage({ params }: UserPageProps) {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 py-8">
+        {/* Back Button */}
+        <Link
+          href="/explore"
+          className="inline-flex items-center gap-2 text-gray-600 hover:text-[#4CAF50] mb-6 transition-colors"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>返回发现</span>
+        </Link>
+
         {/* Profile Header */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
