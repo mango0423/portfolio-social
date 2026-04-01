@@ -52,7 +52,10 @@ export async function GET(request: Request) {
       title: work.title,
       description: work.description || "",
       imageUrl: work.imageUrl || "",
-      user: work.user,
+      user: {
+        ...work.user,
+        image: work.user.image || "",
+      },
       likeCount: work._count.likes,
       commentCount: work._count.comments,
       tags: [],

@@ -1,7 +1,7 @@
 export interface WorkUser {
   id: string;
   name: string;
-  image: string;
+  image: string | null;
 }
 
 export interface Work {

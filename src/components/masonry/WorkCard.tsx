@@ -25,14 +25,20 @@ export default function WorkCard({ work, isLoaded, onImageLoad, currentUserId }:
           {!isLoaded && (
             <div className="absolute inset-0 bg-gray-200 animate-pulse" />
           )}
-          <Image
-            src={work.imageUrl}
-            alt={work.title}
-            width={800}
-            height={600}
-            className={`w-full h-auto object-cover transition-opacity ${isLoaded ? "opacity-100" : "opacity-0"}`}
-            onLoad={() => onImageLoad()}
-          />
+          {work.imageUrl ? (
+            <Image
+              src={work.imageUrl}
+              alt={work.title}
+              width={800}
+              height={600}
+              className={`w-full h-auto object-cover transition-opacity ${isLoaded ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => onImageLoad()}
+            />
+          ) : (
+            <div className="w-full h-48 bg-gray-200 flex items-center justify-center text-gray-400">
+              暂无图片
+            </div>
+          )}
         </div>
       </Link>
 
@@ -58,13 +64,19 @@ export default function WorkCard({ work, isLoaded, onImageLoad, currentUserId }:
 
         <div className="flex items-center justify-between mt-4">
           <Link href={`/user/${work.user.id}`} className="flex items-center gap-2">
-            <Image
-              src={work.user.image}
-              alt={work.user.name}
-              width={24}
-              height={24}
-              className="rounded-full"
-            />
+            {work.user.image ? (
+              <Image
+                src={work.user.image}
+                alt={work.user.name}
+                width={24}
+                height={24}
+                className="rounded-full"
+              />
+            ) : (
+              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center text-xs text-gray-500">
+                {work.user.name?.[0] || "?"}
+              </div>
+            )}
             <span className="text-sm text-gray-600 hover:text-blue-600">{work.user.name}</span>
             <FollowButton userId={currentUserId} targetUserId={work.user.id} />
           </Link>
