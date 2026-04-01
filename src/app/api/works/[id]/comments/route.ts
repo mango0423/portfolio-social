@@ -3,11 +3,12 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const comments = await prisma.comment.findMany({
-      where: { workId: params.id },
+      where: { workId: id },
       include: { user: { select: { id: true, name: true, image: true } } },
       orderBy: { createdAt: "desc" },
     });
@@ -19,11 +20,11 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId, content } = await request.json();
-    const workId = params.id;
+    const { id: workId } = await params;
 
     if (!userId || !content?.trim()) {
       return NextResponse.json({ error: "Invalid data" }, { status: 400 });

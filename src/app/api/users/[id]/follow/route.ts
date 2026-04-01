@@ -3,11 +3,11 @@ import { NextResponse } from "next/server";
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await request.json();
-    const followingId = params.id;
+    const { id: followingId } = await params;
 
     if (!userId || userId === followingId) {
       return NextResponse.json({ error: "Invalid request" }, { status: 400 });
