@@ -7,6 +7,7 @@ interface LikeButtonProps {
   userId: string;
   initialLiked: boolean;
   initialCount: number;
+  onLikeChange?: (newCount: number) => void;
 }
 
 export default function LikeButton({
@@ -14,6 +15,7 @@ export default function LikeButton({
   userId,
   initialLiked,
   initialCount,
+  onLikeChange,
 }: LikeButtonProps) {
   const [liked, setLiked] = useState(initialLiked);
   const [count, setCount] = useState(initialCount);
@@ -36,6 +38,9 @@ export default function LikeButton({
         body: JSON.stringify({ userId }),
       });
       if (!res.ok) throw new Error();
+      if (onLikeChange) {
+        onLikeChange(liked ? count - 1 : count + 1);
+      }
     } catch {
       setLiked(prevLiked);
       setCount(prevCount);
@@ -50,8 +55,8 @@ export default function LikeButton({
       disabled={loading || !userId}
       className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
         liked
-          ? "bg-primary-deep text-white"
-          : "bg-primary text-primary-deep hover:bg-primary/80"
+          ? "bg-[#4CAF50] text-white"
+          : "bg-gray-100 text-gray-600 hover:bg-gray-200"
       } ${loading || !userId ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       <span>{liked ? "♥" : "♡"}</span>

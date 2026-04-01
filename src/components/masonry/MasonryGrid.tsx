@@ -7,9 +7,10 @@ import type { Work } from "@/types/work";
 interface MasonryGridProps {
   works: Work[];
   currentUserId?: string;
+  onWorkClick?: (work: Work) => void;
 }
 
-export default function MasonryGrid({ works, currentUserId }: MasonryGridProps) {
+export default function MasonryGrid({ works, currentUserId, onWorkClick }: MasonryGridProps) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
 
   const handleImageLoad = (workId: string) => {
@@ -35,6 +36,7 @@ export default function MasonryGrid({ works, currentUserId }: MasonryGridProps) 
               isLoaded={loadedImages.has(work.id)}
               onImageLoad={() => handleImageLoad(work.id)}
               currentUserId={currentUserId}
+              onClick={() => onWorkClick?.(work)}
             />
           ))}
         </div>

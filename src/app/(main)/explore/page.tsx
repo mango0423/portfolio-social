@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import MasonryGrid from "@/components/masonry/MasonryGrid";
+import WorkDetailModal from "@/components/work/WorkDetailModal";
 import type { Work, WorksResponse } from "@/types/work";
 
 const SORT_OPTIONS = [
@@ -26,6 +27,7 @@ function ExploreContent() {
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [selectedWork, setSelectedWork] = useState<Work | null>(null);
 
   const currentTag = searchParams.get("tag") || "";
   const currentSort = searchParams.get("sort") || "newest";
@@ -100,6 +102,22 @@ function ExploreContent() {
     const params = new URLSearchParams(searchParams);
     params.set("page", newPage.toString());
     router.push(`/explore?${params.toString()}`);
+  };
+
+  const handleWorkClick = (work: Work) => {
+    setSelectedWork(work);
+  };
+
+  const handleModalClose = () => {
+    setSelectedWork(null);
+  };
+
+  const handleLikeChange = (workId: string, newCount: number) => {
+    setWorks((prevWorks) =>
+      prevWorks.map((w) =>
+        w.id === workId ? { ...w, likeCount: newCount } : w
+      )
+    );
   };
 
   return (
@@ -220,7 +238,7 @@ function ExploreContent() {
             <p className="text-gray-500">暂无作品</p>
           </div>
         ) : (
-          <MasonryGrid works={works} currentUserId={currentUserId} />
+          <MasonryGrid works={works} currentUserId={currentUserId} onWorkClick={handleWorkClick} />
         )}
 
         {/* Pagination */}
@@ -254,6 +272,14 @@ function ExploreContent() {
           </div>
         )}
       </div>
+
+      {selectedWork && (
+        <WorkDetailModal
+          work={selectedWork}
+          onClose={handleModalClose}
+          onLikeChange={handleLikeChange}
+        />
+      )}
     </div>
   );
 }
