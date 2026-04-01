@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 
 interface ProfileSettingsModalProps {
   userId: string;
@@ -20,6 +21,7 @@ export default function ProfileSettingsModal({
   onClose,
 }: ProfileSettingsModalProps) {
   const router = useRouter();
+  const { update } = useSession();
   const [name, setName] = useState(currentName);
   const [bio, setBio] = useState(currentBio);
   const [avatar, setAvatar] = useState<string | null>(currentImage);
@@ -70,6 +72,8 @@ export default function ProfileSettingsModal({
       });
 
       if (res.ok) {
+        // Update session with new user data
+        await update({ name, image: imageUrl });
         onClose();
         router.refresh();
       } else {
