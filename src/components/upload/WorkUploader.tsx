@@ -16,6 +16,12 @@ export default function WorkUploader() {
   const handleFileChange = (selectedFile: File) => {
     if (!selectedFile) return;
 
+    // Max file size 2MB (base64 adds ~37% overhead)
+    if (selectedFile.size > 2 * 1024 * 1024) {
+      alert("图片大小不能超过 2MB");
+      return;
+    }
+
     setFile(selectedFile);
     const reader = new FileReader();
     reader.onload = (e) => {
